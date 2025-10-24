@@ -1,0 +1,131 @@
+services:
+  # --- SQL Database (Postgres) ---
+  postgres:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: youruser
+      POSTGRES_PASSWORD: yourpassword
+      POSTGRES_DB: userdb
+    ports:
+      - "5432:5432"
+
+  # --- NoSQL Database (MongoDB) ---
+  mongodb:
+    image: mongo:6
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  # MongoDB Management UI
+  mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_OPTIONS_EDITORTHEME: "dark"
+    depends_on:
+      - mongodb
+
+  # --- Graph Database (Neo4j) ---
+  neo4j:
+    image: neo4j:5
+    restart: always
+    environment:
+      NEO4J_AUTH: neo4j/yourpassword
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+
+  # --- Redis (Cache, Session Store) ---
+  redis:
+    image: redis:7
+    restart: always
+    ports:
+      - "6379:6379"
+
+  # Redis Management UI
+  redisinsight:
+    image: redislabs/redisinsight
+    restart: always
+    ports:
+      - "8001:8001"
+    depends_on:
+      - redis
+
+  # --- Elasticsearch (Search Engine) ---
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.8.1
+    restart: always
+    environment:
+      discovery.type: single-node
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+      xpack.security.enabled: false
+      xpack.security.enrollment.enabled: false
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+
+  # Kibana for Elasticsearch UI
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.8.1
+    environment:
+      ELASTICSEARCH_HOSTS: "http://elasticsearch:9200"
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+
+  # --- Kafka (Event Bus) ---
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    restart: always
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    restart: always
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+
+  # Kafka UI (Kafdrop)
+  kafdrop:
+    image: obsidiandynamics/kafdrop:4.0.1
+    restart: always
+    ports:
+      - "9000:9000"
+    environment:
+      KAFKA_BROKERCONNECT: kafka:9092
+      JVM_OPTS: "-Xms32M -Xmx64M"
+    depends_on:
+      - kafka
+
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@domain.com
+      PGADMIN_DEFAULT_PASSWORD: adminpassword
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+
+volumes:
+  mongo-data:
