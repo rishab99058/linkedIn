@@ -1,131 +1,178 @@
-services:
-  # --- SQL Database (Postgres) ---
-  postgres:
-    image: postgres:15
-    restart: always
-    environment:
-      POSTGRES_USER: youruser
-      POSTGRES_PASSWORD: yourpassword
-      POSTGRES_DB: userdb
-    ports:
-      - "5432:5432"
+version: '3.8'
 
-  # --- NoSQL Database (MongoDB) ---
+services:
+  # MySQL + Adminer (User & Notification Service)
+  mysql_user:
+    image: mysql:8
+    container_name: linkedin_mysql_user
+    ports:
+      - '3307:3306'  # unique port for userdb
+    environment:
+      MYSQL_DATABASE: userdb
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: user
+      MYSQL_PASSWORD: pass
+    restart: unless-stopped
+    command: --default-time-zone='+05:30'
+
+  adminer_user:
+    image: adminer
+    container_name: linkedin_adminer_user
+    ports:
+      - 8083:8080
+    depends_on:
+      - mysql_user
+
+  # MongoDB + Mongo Express (Post & Chat Service)
   mongodb:
     image: mongo:6
-    restart: always
+    container_name: linkedin_mongodb
     ports:
-      - "27017:27017"
-    volumes:
-      - mongo-data:/data/db
+      - '27017:27017'
+    environment:
+      MONGO_INITDB_DATABASE: postsdb
+      TZ: Asia/Kolkata
+    restart: unless-stopped
 
-  # MongoDB Management UI
   mongo-express:
     image: mongo-express
-    restart: always
-    ports:
-      - "8081:8081"
+    container_name: linkedin_mongoexpress
     environment:
       ME_CONFIG_MONGODB_SERVER: mongodb
-      ME_CONFIG_OPTIONS_EDITORTHEME: "dark"
+      ME_CONFIG_MONGODB_PORT: 27017
+      ME_CONFIG_MONGODB_ENABLE_ADMIN: true
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin
+    ports:
+      - "8081:8081"
     depends_on:
       - mongodb
 
-  # --- Graph Database (Neo4j) ---
+  # Neo4j (Connection Service)
   neo4j:
-    image: neo4j:5
-    restart: always
+    image: neo4j:5.15
+    container_name: linkedin_neo4j
+    ports:
+      - '7474:7474'
+      - '7687:7687'
     environment:
-      NEO4J_AUTH: neo4j/yourpassword
-    ports:
-      - "7474:7474"
-      - "7687:7687"
+      NEO4J_AUTH: neo4j/test
+      TZ: Asia/Kolkata
+    restart: unless-stopped
 
-  # --- Redis (Cache, Session Store) ---
-  redis:
-    image: redis:7
-    restart: always
+  # MySQL + Adminer (Payment Service)
+  mysql:
+    image: mysql:8
+    container_name: linkedin_mysql
     ports:
-      - "6379:6379"
+      - '3306:3306'
+    environment:
+      MYSQL_DATABASE: paymentdb
+      MYSQL_ROOT_PASSWORD: root
+    restart: unless-stopped
+    command: --default-time-zone='+05:30'
 
-  # Redis Management UI
-  redisinsight:
-    image: redislabs/redisinsight
-    restart: always
+  adminer:
+    image: adminer
+    container_name: linkedin_adminer
     ports:
-      - "8001:8001"
+      - 8082:8080
     depends_on:
-      - redis
+      - mysql
 
-  # --- Elasticsearch (Search Engine) ---
+  # Elasticsearch + Head (Search Service)
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.8.1
-    restart: always
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+    container_name: linkedin_elasticsearch
     environment:
       discovery.type: single-node
-      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
-      xpack.security.enabled: false
-      xpack.security.enrollment.enabled: false
+      xpack.security.enabled: 'false'
+      TZ: Asia/Kolkata
     ports:
-      - "9200:9200"
-      - "9300:9300"
+      - '9200:9200'
+    restart: unless-stopped
 
-  # Kibana for Elasticsearch UI
-  kibana:
-    image: docker.elastic.co/kibana/kibana:8.8.1
-    environment:
-      ELASTICSEARCH_HOSTS: "http://elasticsearch:9200"
+  elasticsearch-head:
+    image: mobz/elasticsearch-head:5
+    container_name: linkedin_eshead
     ports:
-      - "5601:5601"
+      - 9100:9100
     depends_on:
       - elasticsearch
 
-  # --- Kafka (Event Bus) ---
+  # Redis + RedisInsight (Global cache and pub/sub)
+  redis:
+    image: redis:7
+    container_name: linkedin_redis
+    ports:
+      - '6379:6379'
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    environment:
+      TZ: Asia/Kolkata
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: linkedin_redisinsight
+    ports:
+      - 8001:8001
+    depends_on:
+      - redis
+
+  # Zookeeper for Kafka
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.0
-    restart: always
+    container_name: linkedin_zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+      TZ: Asia/Kolkata
     ports:
-      - "2181:2181"
+      - '2181:2181'
+    restart: unless-stopped
 
+  # Kafka + AKHQ UI (Event Bus)
   kafka:
     image: confluentinc/cp-kafka:7.4.0
-    restart: always
+    container_name: linkedin_kafka
+    depends_on:
+      - zookeeper
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
+      TZ: Asia/Kolkata
     ports:
-      - "9092:9092"
-    depends_on:
-      - zookeeper
+      - '9092:9092'
+    restart: unless-stopped
 
-  # Kafka UI (Kafdrop)
-  kafdrop:
-    image: obsidiandynamics/kafdrop:4.0.1
-    restart: always
-    ports:
-      - "9000:9000"
+  akhq:
+    image: tchiotludo/akhq
+    container_name: linkedin_akhq
     environment:
-      KAFKA_BROKERCONNECT: kafka:9092
-      JVM_OPTS: "-Xms32M -Xmx64M"
+      AKHQ_CONFIGURATION: |
+        akhq:
+          connections:
+            local:
+              properties:
+                bootstrap.servers: kafka:9092
+      TZ: Asia/Kolkata
+    ports:
+      - "8090:8080"
     depends_on:
       - kafka
 
-  pgadmin:
-    image: dpage/pgadmin4
-    restart: always
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@domain.com
-      PGADMIN_DEFAULT_PASSWORD: adminpassword
+  # Zipkin (Distributed Tracing)
+  zipkin:
+    image: openzipkin/zipkin:2.24
+    container_name: linkedin_zipkin
     ports:
-      - "5050:80"
-    depends_on:
-      - postgres
+      - '9411:9411'
+    environment:
+      TZ: Asia/Kolkata
+    restart: unless-stopped
 
-volumes:
-  mongo-data:
+# Cloudinary is external SaaS, not run as a local container.
+# Add Kibana/Logstash for ELK stack as needed.

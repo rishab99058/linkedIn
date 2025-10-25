@@ -1,0 +1,63 @@
+spring:
+  application:
+    name: user-service
+
+  datasource:
+    url: jdbc:mysql://localhost:3307/userdb?useSSL=false&serverTimezone=Asia/Kolkata&allowPublicKeyRetrieval=true
+    username: user
+    password: pass
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update           # use 'validate' or 'none' in production
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQL8Dialect
+    open-in-view: false
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+#  cloud:
+#    discovery:
+#      enabled: true
+
+cloudinary:
+  url : cloudinary://316928935579575:XQXU3z1zonkFmLD-2d_3WCMztnk@dws1oujlk
+
+# ---- OPTIONAL: Uncomment below if you add ELK/ES etc. ----
+# elasticsearch:
+#   rest:
+#     uris: http://localhost:9200
+
+server:
+  port: 6001
+  servlet:
+    context-path: /users        # API will be available at http://localhost:6001/users
+
+#eureka:
+#  client:
+#    service-url:
+#      defaultZone: http://localhost:8761/eureka
+
+# If you use Kafka event publishing:
+# spring:
+#   kafka:
+#     bootstrap-servers: localhost:9092
+#     consumer:
+#       auto-offset-reset: earliest
+
+# Optional: Management endpoints
+#management:
+#  endpoints:
+#    web:
+#      exposure:
+#        include: "*"
+#  endpoint:
+#    health:
+#      show-details: always
