@@ -40,10 +40,15 @@ server:
   servlet:
     context-path: /users        # API will be available at http://localhost:6001/users
 
-#eureka:
-#  client:
-#    service-url:
-#      defaultZone: http://localhost:8761/eureka
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
 
 # If you use Kafka event publishing:
 # spring:
