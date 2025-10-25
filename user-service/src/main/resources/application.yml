@@ -1,6 +1,6 @@
 spring:
   application:
-    name: user-service
+    name: USER-SERVICE
 
   datasource:
     url: jdbc:mysql://localhost:3307/userdb?useSSL=false&serverTimezone=Asia/Kolkata&allowPublicKeyRetrieval=true
@@ -49,6 +49,7 @@ eureka:
   instance:
     lease-renewal-interval-in-seconds: 10
     lease-expiration-duration-in-seconds: 30
+    prefer-ip-address: true
 
 # If you use Kafka event publishing:
 # spring:
