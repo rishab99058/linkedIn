@@ -11,7 +11,6 @@ import java.util.List;
 public interface UserService {
 
     // Basic Profile
-    UserDto createUser(UserDto userDto,MultipartFile profilePictureFile, MultipartFile coverPictureFile);
     UserDto getUserById(String id);
     List<UserDto> getAllUsers(int page, int size, String filter); // Pagination + filtering (optional)
     UserDto updateUser(String id, UserDto userDto, MultipartFile profilePictureFile, MultipartFile coverPictureFile);

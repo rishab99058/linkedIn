@@ -44,25 +44,7 @@ public class UserServiceImpl implements UserService {
     private final ModelMapper modelMapper;
 
 
-    @Override
-    public UserDto createUser(UserDto userDto, MultipartFile profilePictureFile, MultipartFile coverPictureFile) {
-        try {
-            if(profilePictureFile!= null) {
-              userDto.setProfilePictureUrl(cloudinaryService.uploadFile(profilePictureFile));
-            }
-            if(coverPictureFile != null) {
-                userDto.setCoverPictureUrl(cloudinaryService.uploadFile(coverPictureFile));
-            }
-            UserEntity userEntity = modelMapper.map(userDto, UserEntity.class);
-            userEntity.setCreatedAt(LocalDateTime.now());
-            userEntity.setUpdatedAt(LocalDateTime.now());
-            userEntity = userEntityRepository.save(userEntity);
-            return modelMapper.map(userEntity, UserDto.class);
-        } catch (Exception e) {
-            log.error("Error in createUser: {}", e.getMessage(), e);
-            throw new AppCommonException("User creation failed");
-        }
-    }
+
 
     @Override
     public UserDto getUserById(String id) {

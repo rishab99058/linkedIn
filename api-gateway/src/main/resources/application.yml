@@ -10,10 +10,26 @@ spring:
               uri: lb://USER-SERVICE
               predicates:
                 - Path=/users/**
+              filters:
+                - name: MultipartHandlingFilter
+                - name: LoggingUserFilter
+                - name: AuthenticationFilter
           discovery:
             locator:
               enabled: true
               lower-case-service-id: true
+  webflux:
+    multipart:
+      enabled: true
+      max-in-memory-size: 100MB
+      max-disk-usage-per-part: 100MB
+
+jwt:
+  secret:
+    key : "e16fa5a518f3a12ccc1b682be80ddf16b8ff03df93bf62df9f06e4cfcd54d0258d2390eab7e27865f9f4bd65c31b5628ff9a2c86b4dbb7a79d03e6a38591fa0c"
+
+
+
 
 
 server:
@@ -32,6 +48,7 @@ management:
 
 
 
+
 eureka:
   client:
     service-url:
@@ -41,5 +58,6 @@ eureka:
   instance:
     lease-renewal-interval-in-seconds: 10
     lease-expiration-duration-in-seconds: 30
-    prefer-ip-address: true
+    prefer-ip-address: false
+    hostname: localhost
 

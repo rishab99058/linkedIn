@@ -2,13 +2,15 @@ package com.rishab99058.linkedIn.user_service.controller;
 
 import com.rishab99058.linkedIn.user_service.dto.ExperienceDto;
 import com.rishab99058.linkedIn.user_service.dto.UserDto;
-import com.rishab99058.linkedIn.user_service.exception.AppCommonException;
 import com.rishab99058.linkedIn.user_service.service.api.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -18,17 +20,6 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
-
-    @PostMapping("/create_user")
-    public ResponseEntity<UserDto> createUser(
-            @Valid @RequestPart("user") UserDto userDto,
-            @RequestPart(value = "profile_picture", required = false) MultipartFile profilePictureFile,
-            @RequestPart(value = "cover_picture", required = false) MultipartFile coverPictureFile
-    ) {
-            UserDto createdUser = userService.createUser(userDto, profilePictureFile, coverPictureFile);
-            return ResponseEntity.ok(createdUser);
-
-    }
 
     @GetMapping("/get_user")
     public ResponseEntity<UserDto> getUser(@RequestParam(name = "id", required = true) String id) {
@@ -80,8 +71,9 @@ public class UserController {
     }
 
     @PostMapping("/activate")
-    public ResponseEntity<String> activateUser(@RequestParam("id") String id) {
+    public ResponseEntity<String> activateUser( HttpServletRequest httpServletRequest) {
         try {
+            String id = httpServletRequest.getHeader("X-User-ID");
             userService.activateUser(id);
             return ResponseEntity.ok("User activated successfully.");
         } catch (Exception e) {
@@ -103,10 +95,11 @@ public class UserController {
 
     @PostMapping("/update_cover_picture")
     public ResponseEntity<String> updateCoverPicture(
-            @RequestParam("id") String id,
+            HttpServletRequest httpServletRequest,
             @RequestParam("cover_picture") MultipartFile coverPictureFile) {
         try {
-            userService.updateCoverPicture(id, coverPictureFile);
+            String userId = httpServletRequest.getHeader("X-User-Id");
+            userService.updateCoverPicture(userId, coverPictureFile);
             return ResponseEntity.ok("Cover picture updated successfully.");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Cover picture update failed: " + e.getMessage());
@@ -148,6 +141,18 @@ public class UserController {
         ExperienceDto experienceDto = userService.getExperienceById(id);
         return ResponseEntity.ok(experienceDto);
     }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserDto> getMyProfile( HttpServletRequest httpServletRequest) {
+        String  id = httpServletRequest.getHeader("X-User-Id");
+        if (id == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User ID missing");
+        }
+        UserDto userDto = userService.getUserById(id);
+        return ResponseEntity.ok(userDto);
+    }
+
+
 
 
 

@@ -67,4 +67,11 @@ public interface UserEntityRepository extends JpaRepository<UserEntity, String> 
     List<Experience> findExperiencesByUserId(@Param("userId") String userId);
 
     boolean existsByIdAndDeletedFalseAndDeactivatedFalse(String id);
+
+    @EntityGraph(attributePaths = {
+            "experiences", "educations",
+            "skills", "languages",
+            "certifications", "projects", "accomplishments"
+    })
+    UserEntity findByEmailAndDeletedFalse(String email);
 }

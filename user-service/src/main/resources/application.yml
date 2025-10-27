@@ -10,7 +10,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update           # use 'validate' or 'none' in production
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
@@ -22,6 +22,26 @@ spring:
     redis:
       host: localhost
       port: 6379
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+  # mail
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: rishab99058@gmail.com
+    password: zgaumikqvezwuelb
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
 
 #  cloud:
 #    discovery:
@@ -49,7 +69,8 @@ eureka:
   instance:
     lease-renewal-interval-in-seconds: 10
     lease-expiration-duration-in-seconds: 30
-    prefer-ip-address: true
+    prefer-ip-address: false
+    hostname: localhost
 
 # If you use Kafka event publishing:
 # spring:
@@ -59,11 +80,19 @@ eureka:
 #       auto-offset-reset: earliest
 
 # Optional: Management endpoints
-#management:
-#  endpoints:
-#    web:
-#      exposure:
-#        include: "*"
-#  endpoint:
-#    health:
-#      show-details: always
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+
+
+## Secret key
+jwt:
+  secret:
+    key : "e16fa5a518f3a12ccc1b682be80ddf16b8ff03df93bf62df9f06e4cfcd54d0258d2390eab7e27865f9f4bd65c31b5628ff9a2c86b4dbb7a79d03e6a38591fa0c"
+
+
